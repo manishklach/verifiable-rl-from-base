@@ -27,3 +27,6 @@ integration-only diagnostic reward), checkpoint resume to step 2, saved-adapter 
 two evaluation records, HTML report and chart generation. Linux CI repeats it offline.
 The multimodal-wrapper batch-size failure was reproduced before switching to text-only loading.
 Real-model CUDA execution, Docker and distributed training remain unvalidated.
+
+The real 490,364-row Countdown source was also downloaded and processed with Datasets 5.0.1;
+group splitting and selection returned two train and two held-out rows successfully.

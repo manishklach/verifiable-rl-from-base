@@ -14,8 +14,12 @@ fi
 "$PYTHON" -m venv .venv
 .venv/bin/python -m pip install --upgrade pip
 INDEX="https://download.pytorch.org/whl/cu128"
-[[ "$MODE" == cpu ]] && INDEX="https://download.pytorch.org/whl/cpu"
-.venv/bin/python -m pip install torch==2.9.1 --index-url "$INDEX"
+TORCH_VERSION="2.9.1+cu128"
+if [[ "$MODE" == cpu ]]; then
+  INDEX="https://download.pytorch.org/whl/cpu"
+  TORCH_VERSION="2.9.1+cpu"
+fi
+.venv/bin/python -m pip install "torch==$TORCH_VERSION" --index-url "$INDEX"
 .venv/bin/python -m pip install -c requirements/runtime.txt -e '.[train,plot,dev]'
 .venv/bin/python -m pip check
 .venv/bin/python -c 'import torch, transformers, trl, peft; print("torch",torch.__version__,"CUDA",torch.cuda.is_available())'
