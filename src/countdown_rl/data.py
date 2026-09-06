@@ -7,6 +7,7 @@ import hashlib
 from datasets import Dataset, load_dataset
 
 from .prompts import make_prompt
+from .solver import difficulty_features
 
 
 def combination_key(nums: list[int]) -> str:
@@ -18,11 +19,20 @@ def split_bucket(nums: list[int], seed: int = 42) -> int:
     return int(hashlib.sha256(payload).hexdigest()[:8], 16) % 100
 
 
+def assert_combination_disjoint(train: Dataset, evaluation: Dataset) -> None:
+    train_keys = {combination_key(nums) for nums in train["nums"]}
+    eval_keys = {combination_key(nums) for nums in evaluation["nums"]}
+    overlap = train_keys & eval_keys
+    if overlap:
+        raise AssertionError(f"train/eval combination leakage detected: {len(overlap)} groups")
+
+
 def prepare_dataset(
     dataset_name: str,
     train_size: int | None = None,
     eval_size: int | None = None,
     seed: int = 42,
+    annotate_difficulty: bool = False,
 ) -> tuple[Dataset, Dataset]:
     raw = load_dataset(dataset_name, split="train")
 
@@ -45,5 +55,16 @@ def prepare_dataset(
         train = train.select(range(min(train_size, len(train))))
     if eval_size:
         evaluation = evaluation.select(range(min(eval_size, len(evaluation))))
-    return train.remove_columns("_bucket"), evaluation.remove_columns("_bucket")
-
+    train = train.remove_columns("_bucket")
+    evaluation = evaluation.remove_columns("_bucket")
+    if annotate_difficulty:
+        train = train.map(
+            lambda row: difficulty_features(row["nums"], row["target"]),
+            desc="Analyzing train difficulty",
+        ).filter(lambda row: row["solvable"], desc="Removing impossible train puzzles")
+        evaluation = evaluation.map(
+            lambda row: difficulty_features(row["nums"], row["target"]),
+            desc="Analyzing eval difficulty",
+        ).filter(lambda row: row["solvable"], desc="Removing impossible eval puzzles")
+    assert_combination_disjoint(train, evaluation)
+    return train, evaluation

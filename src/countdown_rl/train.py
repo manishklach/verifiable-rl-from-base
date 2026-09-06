@@ -10,7 +10,7 @@ from trl import GRPOConfig, GRPOTrainer
 
 from .config import ExperimentConfig, config_argument
 from .data import prepare_dataset
-from .rewards import REWARD_FUNCTIONS
+from .rewards import reward_functions
 
 
 def main() -> None:
@@ -18,10 +18,39 @@ def main() -> None:
     set_seed(cfg.seed)
     output = Path(cfg.output_dir)
     output.mkdir(parents=True, exist_ok=True)
-    (output / "experiment_config.json").write_text(json.dumps(vars(cfg), indent=2) + "\n")
+    config_suffix = cfg.difficulty_band or "main"
+    (output / f"experiment_config-{config_suffix}.json").write_text(
+        json.dumps(vars(cfg), indent=2) + "\n"
+    )
 
     train_data, eval_data = prepare_dataset(
-        cfg.dataset_name, cfg.train_size, cfg.eval_size, cfg.seed
+        cfg.dataset_name,
+        cfg.train_size,
+        cfg.eval_size,
+        cfg.seed,
+        annotate_difficulty=cfg.difficulty_band is not None,
+    )
+    if cfg.difficulty_band:
+        train_data = train_data.filter(
+            lambda row: row["difficulty_band"] == cfg.difficulty_band,
+            desc=f"Selecting {cfg.difficulty_band} curriculum stage",
+        )
+        if not len(train_data):
+            raise ValueError(f"No training examples in difficulty band {cfg.difficulty_band!r}")
+    (output / f"dataset_manifest-{config_suffix}.json").write_text(
+        json.dumps(
+            {
+                "dataset": cfg.dataset_name,
+                "seed": cfg.seed,
+                "train_rows": len(train_data),
+                "eval_rows": len(eval_data),
+                "train_fingerprint": train_data._fingerprint,
+                "eval_fingerprint": eval_data._fingerprint,
+                "split_rule": "sha256(seed:sorted-number-multiset) modulo 100; train < 90",
+            },
+            indent=2,
+        )
+        + "\n"
     )
     tokenizer = AutoTokenizer.from_pretrained(cfg.model_name, trust_remote_code=True)
     if tokenizer.pad_token is None:
@@ -48,6 +77,7 @@ def main() -> None:
         gradient_checkpointing=cfg.gradient_checkpointing,
         report_to=[] if cfg.report_to == "none" else [cfg.report_to],
         remove_unused_columns=False,
+        model_init_kwargs={"dtype": torch.bfloat16 if torch.cuda.is_available() else torch.float32},
     )
     peft_config = None
     if cfg.use_lora:
@@ -62,14 +92,14 @@ def main() -> None:
 
     trainer = GRPOTrainer(
         model=cfg.model_name,
-        reward_funcs=REWARD_FUNCTIONS,
+        reward_funcs=reward_functions(cfg.reward_profile),
         args=args,
         train_dataset=train_data,
         eval_dataset=eval_data,
         processing_class=tokenizer,
         peft_config=peft_config,
     )
-    trainer.train()
+    trainer.train(resume_from_checkpoint=cfg.resume_from_checkpoint)
     final_dir = output / "final"
     trainer.save_model(final_dir)
     tokenizer.save_pretrained(final_dir)

@@ -23,13 +23,18 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.3.0", "ruff>=0.11.0"]
+dev = ["hypothesis>=6.130.0", "pytest>=8.3.0", "ruff>=0.11.0"]
 wandb = ["wandb>=0.19.0"]
+demo = ["gradio>=5.25.0"]
 
 [project.scripts]
 countdown-train = "countdown_rl.train:main"
 countdown-eval = "countdown_rl.evaluate:main"
 countdown-plot = "countdown_rl.plot:main"
+countdown-generate = "countdown_rl.generate:main"
+countdown-report = "countdown_rl.report:main"
+countdown-demo = "countdown_rl.demo:main"
+countdown-doctor = "countdown_rl.doctor:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

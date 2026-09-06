@@ -1,0 +1,6 @@
+output_dir: outputs/curriculum
+max_steps: 150
+train_size: 100000
+difficulty_band: easy
+resume_from_checkpoint: false
+

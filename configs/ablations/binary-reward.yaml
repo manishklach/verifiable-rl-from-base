@@ -1,6 +1,6 @@
 model_name: Qwen/Qwen3.5-0.8B-Base
 dataset_name: Jiayi-Pan/Countdown-Tasks-3to4
-output_dir: outputs/qwen35-0.8b-countdown
+output_dir: outputs/ablation-binary-reward
 seed: 42
 train_size: 50000
 eval_size: 1000
@@ -23,6 +23,6 @@ lora_dropout: 0.05
 bf16: true
 gradient_checkpointing: true
 report_to: none
-reward_profile: shaped
+reward_profile: binary
 difficulty_band: null
 resume_from_checkpoint: false

@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: "If you use this experiment framework, please cite it."
+title: "Verifiable RL from Base"
+type: software
+authors:
+  - family-names: "Lachwani"
+    given-names: "Manish"
+version: 0.1.0
+date-released: 2026-09-06
+license: MIT
+repository-code: "https://github.com/manishklach/verifiable-rl-from-base"

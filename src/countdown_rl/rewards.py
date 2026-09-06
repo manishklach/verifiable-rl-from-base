@@ -50,3 +50,12 @@ def correctness_reward(completions, nums, target, **kwargs) -> list[float]:
 
 REWARD_FUNCTIONS = [format_reward, parseable_reward, number_usage_reward, correctness_reward]
 
+
+def reward_functions(profile: str):
+    if profile == "shaped":
+        return REWARD_FUNCTIONS
+    if profile == "binary":
+        return [correctness_reward]
+    if profile == "no-format":
+        return [parseable_reward, number_usage_reward, correctness_reward]
+    raise ValueError(f"unknown reward profile: {profile}")

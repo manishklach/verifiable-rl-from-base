@@ -28,11 +28,11 @@ class InvalidExpression(ValueError):
 
 
 def extract_answer(completion: str) -> str | None:
-    """Return only the expression inside the final answer tag."""
+    """Return the expression only when exactly one answer tag is present."""
     matches = ANSWER_RE.findall(completion)
-    if not matches:
+    if len(matches) != 1:
         return None
-    expression = matches[-1].strip()
+    expression = matches[0].strip()
     if not expression or len(expression) > 200 or not PLAIN_EXPR_RE.fullmatch(expression):
         return None
     return expression
@@ -94,4 +94,3 @@ def verify_completion(completion: str, nums: Sequence[int], target: int) -> Veri
         correct=exact_usage and value == target,
         error=None if exact_usage else "numbers were not used exactly once",
     )
-

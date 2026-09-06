@@ -7,6 +7,11 @@ This repository trains `Qwen/Qwen3.5-0.8B-Base` directly with Group Relative Pol
 Optimization (GRPO) on Jiayi Pan's Countdown tasks. There is no SFT stage and no learned
 reward model. Every reward is computed by a strict symbolic verifier.
 
+It is an experiment platform rather than a single training file: exact puzzle solving,
+difficulty-aware curricula, adversarial reward audits, `pass@k`, out-of-distribution
+benchmarks, checkpoint comparisons, an interactive demo, and a self-contained research
+report are included.
+
 > Status: implementation complete; experiment results are intentionally not claimed until
 > the GPU run and held-out evaluation have finished.
 
@@ -50,6 +55,20 @@ split can therefore inflate accuracy. This project hashes the **sorted multiset 
 numbers** and assigns the whole group to train or evaluation. A number combination cannot
 cross the boundary, even if its order differs.
 
+## Exact solver and meaningful difficulty
+
+The dynamic-programming solver enumerates reachable rational values over subsets of the
+input multiset. It proves solvability and emits a verifier-compatible reference expression.
+Difficulty is based on solution rarity, operator diversity, and whether fractional
+intermediate values are required—not merely expression depth, which is almost constant
+when every number must be used.
+
+Three staged curriculum configurations are supplied:
+
+```bash
+bash scripts/run_curriculum.sh  # easy → medium → hard, resuming optimizer state
+```
+
 ## Quick start
 
 Use Linux with a recent NVIDIA GPU. A 24 GB GPU is a practical starting point for the
@@ -86,17 +105,45 @@ Or execute the baseline, training, final evaluation, and plot pipeline together:
 bash scripts/run_experiment.sh
 ```
 
+The pipeline begins with `countdown-doctor`, which checks CUDA, BF16 support, dependency
+versions, Qwen's actual model architecture, and GRPO batch divisibility before downloading
+weights or committing GPU hours.
+
 Evaluate the adapter and plot reward curves:
 
 ```bash
 countdown-eval \
   --model outputs/qwen35-0.8b-countdown/final \
-  --samples 500 \
+  --samples 500 --samples-per-prompt 4 \
   --output outputs/final.json
 
 countdown-plot \
   --state outputs/qwen35-0.8b-countdown/trainer_state.json \
   --output assets/training-curves.png
+```
+
+Evaluate every saved checkpoint and produce a standalone HTML report:
+
+```bash
+SAMPLES=500 K=4 bash scripts/evaluate_checkpoints.sh
+```
+
+Generate a solvable five-number OOD benchmark and evaluate it:
+
+```bash
+countdown-generate --arity 5 --samples 500
+countdown-eval \
+  --model outputs/qwen35-0.8b-countdown/final \
+  --jsonl data/ood-five-number.jsonl \
+  --samples 500 --samples-per-prompt 4 \
+  --output outputs/eval-ood-five.json
+```
+
+Launch the verifier-backed side-by-side demo after training:
+
+```bash
+pip install -e ".[demo]"
+countdown-demo --trained outputs/qwen35-0.8b-countdown/final
 ```
 
 ## Experimental protocol
@@ -118,23 +165,34 @@ Recommended follow-up ablations:
 - group split versus naive row split;
 - zero-SFT versus a small cold-start SFT set.
 
+Ready-to-run configurations for binary reward, removal of the format reward, and stronger
+KL regularization live under `configs/ablations/`. Each run must use the same held-out
+problem IDs and decoding configuration for a valid comparison.
+
 ## Repository layout
 
 ```text
 configs/                       GRPO experiment configuration
 src/countdown_rl/data.py       grouped dataset split and prompts
+src/countdown_rl/solver.py     exact DP solver and difficulty analysis
 src/countdown_rl/verifier.py   safe AST evaluator and strict checker
 src/countdown_rl/rewards.py    composable GRPO rewards
 src/countdown_rl/train.py      zero-SFT training entry point
-src/countdown_rl/evaluate.py   deterministic held-out evaluation
+src/countdown_rl/evaluate.py   pass@k, OOD, slices, and failure analysis
+src/countdown_rl/generate.py   deterministic solvable OOD generation
+src/countdown_rl/report.py     self-contained HTML experiment report
+src/countdown_rl/demo.py       interactive base-versus-GRPO comparison
 src/countdown_rl/plot.py       training-curve generator
-tests/                         verifier and split invariants
+tests/                         unit, adversarial, and property tests
 ```
+
+See [`docs/GPU_RUN.md`](docs/GPU_RUN.md) for RunPod/Docker instructions and memory knobs.
 
 ## Reproducibility notes
 
 - The raw Hugging Face dataset is downloaded at run time.
 - The exact experiment configuration is copied to the output directory.
+- Dataset fingerprints, row counts, split seed, and split rule are recorded per run.
 - Checkpoints are written every 50 steps.
 - The final adapter, tokenizer, and trainer state are saved together.
 - Evaluation uses greedy decoding by default for repeatability.

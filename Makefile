@@ -1,4 +1,4 @@
-.PHONY: install test lint train evaluate plot
+.PHONY: install test lint train evaluate plot report demo ood
 
 install:
 	python -m pip install -e ".[dev]"
@@ -18,3 +18,11 @@ evaluate:
 plot:
 	python -m countdown_rl.plot --state outputs/qwen35-0.8b-countdown/trainer_state.json
 
+ood:
+	python -m countdown_rl.generate --arity 5 --samples 500
+
+report:
+	bash scripts/evaluate_checkpoints.sh
+
+demo:
+	python -m countdown_rl.demo --trained outputs/qwen35-0.8b-countdown/final

@@ -34,6 +34,9 @@ class ExperimentConfig:
     bf16: bool = True
     gradient_checkpointing: bool = True
     report_to: str = "none"
+    reward_profile: str = "shaped"
+    difficulty_band: str | None = None
+    resume_from_checkpoint: bool | str = False
 
     @classmethod
     def from_yaml(cls, path: str | Path) -> ExperimentConfig:
@@ -49,4 +52,3 @@ def config_argument() -> str:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", default="configs/qwen35-0.8b-grpo.yaml")
     return parser.parse_args().config
-
