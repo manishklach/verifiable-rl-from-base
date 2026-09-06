@@ -15,6 +15,12 @@ report are included.
 > Status: implementation complete; experiment results are intentionally not claimed until
 > the GPU run and held-out evaluation have finished.
 
+## Start here
+
+- **Run the project:** follow the [GPU experiment guide](docs/GPU_RUN.md).
+- **Extend rewards, models, datasets, or metrics:** read [Build on top](docs/EXTENDING.md).
+- **Contribute changes upstream:** follow [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Why this experiment
 
 Countdown provides a clean test bed for verifiable reinforcement learning:

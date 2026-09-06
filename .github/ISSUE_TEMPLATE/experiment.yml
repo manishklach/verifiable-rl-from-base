@@ -1,0 +1,32 @@
+name: Experiment proposal
+description: Propose a reward, model, curriculum, dataset, or ablation
+title: "[Experiment]: "
+labels: ["experiment"]
+body:
+  - type: textarea
+    id: hypothesis
+    attributes:
+      label: Falsifiable hypothesis
+      description: What measurable outcome do you expect, and why?
+    validations:
+      required: true
+  - type: textarea
+    id: control
+    attributes:
+      label: Baseline and control
+      description: Describe the comparison and variables held constant.
+    validations:
+      required: true
+  - type: textarea
+    id: metrics
+    attributes:
+      label: Metrics and evaluation split
+      description: Include primary metric, slices, seed count, and leakage controls.
+    validations:
+      required: true
+  - type: textarea
+    id: resources
+    attributes:
+      label: Compute and expected duration
+      description: GPU type, count, approximate hours, and storage.
+
