@@ -27,12 +27,17 @@ class InvalidExpression(ValueError):
     pass
 
 
+def answer_block(completion: str) -> str | None:
+    """Accept one balanced, nonempty block, with no stray or nested answer tags."""
+    if len(re.findall(r"</?answer\b", completion, re.IGNORECASE)) != 2:
+        return None
+    matches = ANSWER_RE.findall(completion)
+    return matches[0].strip() if len(matches) == 1 and matches[0].strip() else None
+
+
 def extract_answer(completion: str) -> str | None:
     """Return the expression only when exactly one answer tag is present."""
-    matches = ANSWER_RE.findall(completion)
-    if len(matches) != 1:
-        return None
-    expression = matches[0].strip()
+    expression = answer_block(completion)
     if not expression or len(expression) > 200 or not PLAIN_EXPR_RE.fullmatch(expression):
         return None
     return expression
@@ -92,5 +97,11 @@ def verify_completion(completion: str, nums: Sequence[int], target: int) -> Veri
         uses_numbers_exactly_once=exact_usage,
         value=value,
         correct=exact_usage and value == target,
-        error=None if exact_usage else "numbers were not used exactly once",
+        error=(
+            "numbers were not used exactly once"
+            if not exact_usage
+            else "expression does not equal target"
+            if value != target
+            else None
+        ),
     )

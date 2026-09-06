@@ -34,6 +34,9 @@ def prepare_dataset(
     seed: int = 42,
     annotate_difficulty: bool = False,
 ) -> tuple[Dataset, Dataset]:
+    for name, size in (("train_size", train_size), ("eval_size", eval_size)):
+        if size is not None and (type(size) is not int or size < 1):
+            raise ValueError(f"{name} must be a positive integer or None")
     raw = load_dataset(dataset_name, split="train")
 
     def enrich(row):
@@ -51,6 +54,14 @@ def prepare_dataset(
     evaluation = data.filter(lambda row: row["_bucket"] >= 90, desc="Selecting eval groups")
     train = train.shuffle(seed=seed)
     evaluation = evaluation.shuffle(seed=seed + 1)
+    seen = set()
+    indices = []
+    for index, row in enumerate(evaluation):
+        key = (combination_key(row["nums"]), row["target"])
+        if key not in seen:
+            seen.add(key)
+            indices.append(index)
+    evaluation = evaluation.select(indices)
     if train_size:
         train = train.select(range(min(train_size, len(train))))
     if eval_size:

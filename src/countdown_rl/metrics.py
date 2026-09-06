@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections import Counter, defaultdict
 from collections.abc import Iterable
+from math import comb
 from typing import Any
 
 
@@ -20,12 +21,18 @@ def classify_failure(record: dict[str, Any]) -> str:
 
 
 def pass_at_k(records: Iterable[dict[str, Any]], k: int) -> float:
+    if type(k) is not int or k < 1:
+        raise ValueError("k must be a positive integer")
     grouped: dict[str, list[bool]] = defaultdict(list)
     for row in records:
         grouped[str(row["problem_id"])].append(bool(row["correct"]))
     if not grouped:
         return 0.0
-    return sum(any(values[:k]) for values in grouped.values()) / len(grouped)
+    if any(len(values) < k for values in grouped.values()):
+        raise ValueError("each problem must have at least k samples")
+    return sum(
+        1 - comb(len(values) - sum(values), k) / comb(len(values), k) for values in grouped.values()
+    ) / len(grouped)
 
 
 def summarize(records: list[dict[str, Any]]) -> dict[str, Any]:
@@ -39,7 +46,7 @@ def summarize(records: list[dict[str, Any]]) -> dict[str, Any]:
         by_arity[str(len(row["nums"]))].append(bool(row["correct"]))
         if row.get("difficulty_band"):
             by_difficulty[str(row["difficulty_band"])].append(bool(row["correct"]))
-    max_k = max(Counter(row["problem_id"] for row in records).values())
+    max_k = min(Counter(row["problem_id"] for row in records).values())
     return {
         "problems": problem_count,
         "completions": len(records),
@@ -56,7 +63,11 @@ def summarize(records: list[dict[str, Any]]) -> dict[str, Any]:
             key: sum(values) / len(values) for key, values in sorted(by_difficulty.items())
         },
         "failure_taxonomy": dict(sorted(failures.items())),
+        "mean_completion_tokens": (
+            sum(row["completion_tokens"] for row in records) / len(records)
+            if all("completion_tokens" in row for row in records)
+            else None
+        ),
         "mean_completion_characters": sum(len(row.get("completion", "")) for row in records)
         / len(records),
     }
-

@@ -1,28 +1,29 @@
 [build-system]
-requires = ["setuptools>=75", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "verifiable-rl-from-base"
-version = "0.1.0"
+version = "0.2.0"
 description = "Zero-SFT GRPO on Countdown with strict, executable rewards"
 readme = "README.md"
 requires-python = ">=3.10"
-license = {text = "MIT"}
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [{name = "Manish KL"}]
-dependencies = [
-  "accelerate>=1.6.0",
-  "datasets>=3.5.0",
-  "matplotlib>=3.9.0",
-  "peft>=0.15.0",
-  "pyyaml>=6.0.0",
-  "safetensors>=0.5.0",
-  "torch>=2.5.0",
-  "transformers>=5.3.0",
-  "trl>=0.29.0",
-]
+dependencies = ["pyyaml>=6.0.0", "datasets>=3.5.0"]
+
+[project.urls]
+Repository = "https://github.com/manishklach/verifiable-rl-from-base"
+Issues = "https://github.com/manishklach/verifiable-rl-from-base/issues"
+Changelog = "https://github.com/manishklach/verifiable-rl-from-base/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
+train = [
+  "accelerate>=1.6.0", "peft>=0.15.0", "safetensors>=0.5.0",
+  "torch>=2.5.0", "transformers>=5.3.0,<6", "trl>=0.29.0,<0.30",
+]
+plot = ["matplotlib>=3.9.0"]
 dev = ["hypothesis>=6.130.0", "pytest>=8.3.0", "ruff>=0.11.0"]
 wandb = ["wandb>=0.19.0"]
 demo = ["gradio>=5.25.0"]

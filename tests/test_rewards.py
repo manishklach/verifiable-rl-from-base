@@ -20,4 +20,3 @@ def test_printing_target_cannot_earn_correctness():
     kwargs = {"nums": [[8, 3, 4]], "target": [20]}
     assert correctness_reward(completions, **kwargs) == [0.0]
     assert number_usage_reward(completions, **kwargs) == [0.0]
-

@@ -7,29 +7,32 @@ import hashlib
 import json
 from pathlib import Path
 
-import torch
 from datasets import Dataset
-from peft import PeftConfig, PeftModel
-from transformers import (
-    AutoConfig,
-    AutoModelForCausalLM,
-    AutoModelForImageTextToText,
-    AutoTokenizer,
-)
 
 from .data import prepare_dataset
 from .metrics import summarize
+from .prompts import make_prompt
 from .solver import difficulty_features
-from .verifier import ANSWER_RE, verify_completion
+from .verifier import answer_block, verify_completion
 
 
 def load_model(model_path: str):
+    from peft import PeftConfig, PeftModel
+    from transformers import (
+        AutoConfig,
+        AutoModelForCausalLM,
+        AutoModelForImageTextToText,
+        AutoTokenizer,
+    )
+
     path = Path(model_path)
     adapter_config = path / "adapter_config.json"
     base_name = model_path
     if adapter_config.exists():
         base_name = PeftConfig.from_pretrained(model_path).base_model_name_or_path
-    architecture = (AutoConfig.from_pretrained(base_name, trust_remote_code=True).architectures or [""])[0]
+    architecture = (
+        AutoConfig.from_pretrained(base_name, trust_remote_code=True).architectures or [""]
+    )[0]
     auto_model = (
         AutoModelForImageTextToText
         if architecture.endswith("ForConditionalGeneration")
@@ -64,8 +67,32 @@ def _problem_id(nums: list[int], target: int) -> str:
 
 
 def _load_jsonl(path: str, samples: int) -> Dataset:
-    rows = [json.loads(line) for line in Path(path).read_text().splitlines() if line.strip()]
-    return Dataset.from_list(rows[:samples])
+    rows = [json.loads(line) for line in Path(path).read_text(encoding="utf-8").splitlines() if line.strip()]
+    unique = []
+    seen = set()
+    for row in rows:
+        nums, target = row["nums"], row["target"]
+        if (
+            not isinstance(nums, list)
+            or not 1 <= len(nums) <= 5
+            or any(type(n) is not int or n < 0 for n in nums)
+            or type(target) is not int
+        ):
+            raise ValueError("JSONL puzzles require 1..5 nonnegative integers and integer target")
+        identity = _problem_id(nums, target)
+        if identity not in seen:
+            seen.add(identity)
+            unique.append(
+                {
+                    "nums": nums,
+                    "target": target,
+                    "problem_id": identity,
+                    "prompt": make_prompt(nums, target),
+                }
+            )
+    if not unique:
+        raise ValueError("benchmark is empty")
+    return Dataset.from_list(unique[:samples])
 
 
 def _record(row, completion: str, sample_index: int, token_count: int) -> dict[str, object]:
@@ -85,7 +112,7 @@ def _record(row, completion: str, sample_index: int, token_count: int) -> dict[s
         "completion": completion,
         "completion_tokens": token_count,
         "expression": result.expression,
-        "has_answer_tag": bool(ANSWER_RE.search(completion)),
+        "has_answer_tag": answer_block(completion) is not None,
         "parseable": result.parseable,
         "uses_numbers_exactly_once": result.uses_numbers_exactly_once,
         "value": str(result.value) if result.value is not None else None,
@@ -108,10 +135,15 @@ def main() -> None:
     parser.add_argument("--output", default=None)
     args = parser.parse_args()
 
+    if min(args.samples, args.samples_per_prompt, args.max_new_tokens) < 1 or args.temperature <= 0:
+        parser.error("sample counts, max-new-tokens and temperature must be positive")
+
     if args.jsonl:
         evaluation = _load_jsonl(args.jsonl, args.samples)
     else:
         _, evaluation = prepare_dataset(args.dataset, 1, args.samples, args.seed)
+    import torch
+
     model, tokenizer = load_model(args.model)
     model.eval()
     records = []
@@ -131,14 +163,30 @@ def main() -> None:
         prompt_length = inputs["input_ids"].shape[1]
         for index, sequence in enumerate(generated):
             completion_ids = sequence[prompt_length:]
+            eos = tokenizer.eos_token_id
+            if eos is not None and eos in completion_ids.tolist():
+                completion_ids = completion_ids[: completion_ids.tolist().index(eos) + 1]
             completion = tokenizer.decode(completion_ids, skip_special_tokens=True)
             records.append(_record(row, completion, index, len(completion_ids)))
 
     metrics = summarize(records)
-    summary = {"model": args.model, "seed": args.seed, "metrics": metrics, "records": records}
+    summary = {
+        "schema_version": 2,
+        "model": args.model,
+        "seed": args.seed,
+        "decoding": {
+            "do_sample": args.samples_per_prompt > 1,
+            "temperature": args.temperature if args.samples_per_prompt > 1 else None,
+            "samples_per_prompt": args.samples_per_prompt,
+            "max_new_tokens": args.max_new_tokens,
+        },
+        "dataset": {"source": args.jsonl or args.dataset, "fingerprint": evaluation._fingerprint},
+        "metrics": metrics,
+        "records": records,
+    }
     destination = Path(args.output or f"outputs/eval-{Path(args.model).name}.json")
     destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_text(json.dumps(summary, indent=2) + "\n")
+    destination.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({"model": args.model, **metrics}, indent=2))
 
 

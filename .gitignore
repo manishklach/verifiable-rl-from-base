@@ -11,3 +11,7 @@ outputs/
 wandb/
 .env
 
+
+.hypothesis/
+reports/
+data/*.jsonl

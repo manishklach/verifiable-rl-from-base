@@ -5,7 +5,7 @@ type: software
 authors:
   - family-names: "Lachwani"
     given-names: "Manish"
-version: 0.1.0
+version: 0.2.0
 date-released: 2026-09-06
 license: MIT
 repository-code: "https://github.com/manishklach/verifiable-rl-from-base"

@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import importlib.metadata
 import json
+import os
 
 import torch
 from transformers import AutoConfig, AutoTokenizer
@@ -25,7 +26,7 @@ def main() -> None:
     if cfg.num_generations < 2:
         problems.append("GRPO requires at least two generations for a relative advantage")
     effective = (
-        max(1, torch.cuda.device_count())
+        int(os.environ.get("WORLD_SIZE", "1"))
         * cfg.per_device_train_batch_size
         * cfg.gradient_accumulation_steps
     )
@@ -34,6 +35,8 @@ def main() -> None:
             "effective batch size must be divisible by num_generations "
             f"({effective} is not divisible by {cfg.num_generations})"
         )
+    if cfg.bf16 and torch.cuda.is_available() and not torch.cuda.is_bf16_supported():
+        problems.append("BF16 is configured but unsupported; set bf16: false")
     reward_functions(cfg.reward_profile)
     model_config = AutoConfig.from_pretrained(cfg.model_name, trust_remote_code=True)
     tokenizer = AutoTokenizer.from_pretrained(cfg.model_name, trust_remote_code=True)

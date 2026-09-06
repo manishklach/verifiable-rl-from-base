@@ -18,6 +18,8 @@ def generate_benchmark(
     maximum: int,
     seed: int,
 ) -> list[dict[str, object]]:
+    if samples < 1 or not 1 <= arity <= 5 or not 1 <= minimum <= maximum:
+        raise ValueError("require samples > 0, arity 1..5, and 1 <= minimum <= maximum")
     rng = random.Random(seed)
     rows: list[dict[str, object]] = []
     seen: set[tuple[tuple[int, ...], int]] = set()

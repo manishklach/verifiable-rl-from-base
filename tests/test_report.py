@@ -16,4 +16,3 @@ def test_report_is_self_contained_and_escapes_model_name():
     assert "<!doctype html>" in report
     assert "&lt;script&gt;" in report
     assert "50.0%" in report
-

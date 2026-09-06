@@ -31,13 +31,19 @@ def main() -> None:
             inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
             with torch.inference_mode():
                 sequence = model.generate(**inputs, max_new_tokens=256, do_sample=False)[0]
-            completion = tokenizer.decode(sequence[inputs["input_ids"].shape[1] :], skip_special_tokens=True)
+            completion = tokenizer.decode(
+                sequence[inputs["input_ids"].shape[1] :], skip_special_tokens=True
+            )
             check = verify_completion(completion, nums, int(target))
-            outputs.append((label, completion, "✅ Correct" if check.correct else f"❌ {check.error}"))
+            outputs.append(
+                (label, completion, "✅ Correct" if check.correct else f"❌ {check.error}")
+            )
         return outputs[0][1], outputs[0][2], outputs[1][1], outputs[1][2]
 
     with gr.Blocks(title="Verifiable RL from Base") as app:
-        gr.Markdown("# Verifiable RL from Base\nCompare the untouched base model with its GRPO adapter.")
+        gr.Markdown(
+            "# Verifiable RL from Base\nCompare the untouched base model with its GRPO adapter."
+        )
         with gr.Row():
             numbers = gr.Textbox(value="8, 3, 4", label="Numbers")
             target = gr.Number(value=20, precision=0, label="Target")
@@ -51,7 +57,9 @@ def main() -> None:
                 gr.Markdown("## GRPO")
                 trained_output = gr.Textbox(lines=10, label="Completion")
                 trained_verdict = gr.Textbox(label="Verifier")
-        button.click(run, [numbers, target], [base_output, base_verdict, trained_output, trained_verdict])
+        button.click(
+            run, [numbers, target], [base_output, base_verdict, trained_output, trained_verdict]
+        )
     app.launch(share=args.share)
 
 

@@ -19,6 +19,11 @@ number of generated sequences per optimizer step is approximately:
 devices × batch size × gradient accumulation × generations
 ```
 
+This is the rollout sequence batch, already including repeated generations. Divide by
+`num_generations` for distinct prompts. It must be divisible by `num_generations`.
+Evaluation sets its per-device batch to `num_generations`. `WORLD_SIZE` controls the
+preflight process count; visible GPUs alone do not imply distributed execution.
+
 ## RunPod or another GPU VM
 
 ```bash
@@ -27,7 +32,7 @@ cd verifiable-rl-from-base
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -U pip
-pip install -e ".[dev,wandb,demo]"
+pip install -e ".[train,plot,dev,wandb,demo]"
 accelerate config default
 bash scripts/run_experiment.sh
 ```

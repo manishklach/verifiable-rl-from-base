@@ -36,4 +36,3 @@ def test_exact_fraction_arithmetic():
 
 def test_requires_answer_tag():
     assert not verify_completion("(8 - 3) * 4", [8, 3, 4], 20).correct
-

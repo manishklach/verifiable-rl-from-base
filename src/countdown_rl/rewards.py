@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any
 
-from .verifier import ANSWER_RE, verify_completion
+from .verifier import answer_block, verify_completion
 
 
 def _text(completion: Any) -> str:
@@ -19,7 +19,7 @@ def _text(completion: Any) -> str:
 
 
 def _rows(completions: Sequence[Any], nums: Sequence[Sequence[int]], target: Sequence[int]):
-    for completion, numbers, goal in zip(completions, nums, target):
+    for completion, numbers, goal in zip(completions, nums, target, strict=True):
         text = _text(completion)
         yield text, verify_completion(text, numbers, int(goal))
 
@@ -28,8 +28,7 @@ def format_reward(completions, **kwargs) -> list[float]:
     """Small incentive for emitting exactly one non-empty answer block."""
     rewards = []
     for completion in completions:
-        matches = ANSWER_RE.findall(_text(completion))
-        rewards.append(0.1 if len(matches) == 1 and matches[0].strip() else 0.0)
+        rewards.append(0.1 if answer_block(_text(completion)) is not None else 0.0)
     return rewards
 
 

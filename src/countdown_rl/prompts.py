@@ -16,4 +16,3 @@ final arithmetic expression inside <answer>...</answer>.
 
 Solution:
 """
-

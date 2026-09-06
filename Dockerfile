@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /workspace/verifiable-rl-from-base
 COPY . .
-RUN python3 -m pip install --break-system-packages ".[dev,wandb,demo]"
+RUN python3 -m pip install --break-system-packages ".[train,plot,dev,wandb,demo]"
 
 CMD ["bash", "scripts/run_experiment.sh"]
 

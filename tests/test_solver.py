@@ -21,4 +21,3 @@ def test_solver_detects_impossible_problem():
 
 def test_difficulty_is_deterministic():
     assert difficulty_features([3, 8, 4], 20) == difficulty_features([4, 3, 8], 20)
-

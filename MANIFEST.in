@@ -1,0 +1,5 @@
+include CHANGELOG.md CITATION.cff CONTRIBUTING.md Dockerfile Makefile
+recursive-include configs *.yaml
+recursive-include docs *.md
+recursive-include scripts *.sh
+recursive-include model-card *.md

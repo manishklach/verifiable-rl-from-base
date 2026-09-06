@@ -50,14 +50,12 @@ def _prefer(new: _Candidate, old: _Candidate) -> bool:
     )
 
 
-@lru_cache(maxsize=100_000)
+@lru_cache(maxsize=16)
 def _solve_values(numbers: tuple[int, ...], count_cap: int) -> dict[Fraction, _Candidate]:
     n = len(numbers)
     tables: dict[int, dict[Fraction, _Candidate]] = {}
     for index, number in enumerate(numbers):
-        tables[1 << index] = {
-            Fraction(number): _Candidate(str(number), 1, False, frozenset())
-        }
+        tables[1 << index] = {Fraction(number): _Candidate(str(number), 1, False, frozenset())}
 
     for size in range(2, n + 1):
         for mask in range(1, 1 << n):
@@ -107,12 +105,20 @@ def _solve_values(numbers: tuple[int, ...], count_cap: int) -> dict[Fraction, _C
     return tables[(1 << n) - 1]
 
 
-def solve(nums: list[int] | tuple[int, ...], target: int, count_cap: int = 10_000) -> Solution | None:
-    numbers = tuple(sorted(map(int, nums)))
+def solve(
+    nums: list[int] | tuple[int, ...], target: int, count_cap: int = 10_000
+) -> Solution | None:
+    if not 1 <= len(nums) <= 5 or any(type(n) is not int or n < 0 for n in nums):
+        raise ValueError("nums must contain one to five nonnegative integers")
+    if type(target) is not int or type(count_cap) is not int or count_cap < 1:
+        raise ValueError("target must be an integer and count_cap a positive integer")
+    numbers = tuple(sorted(nums))
     candidate = _solve_values(numbers, count_cap).get(Fraction(int(target)))
     if candidate is None:
         return None
-    expression = candidate.expression[1:-1] if candidate.expression.startswith("(") else candidate.expression
+    expression = (
+        candidate.expression[1:-1] if candidate.expression.startswith("(") else candidate.expression
+    )
     return Solution(
         expression=expression,
         value=Fraction(target),
@@ -140,4 +146,3 @@ def difficulty_features(nums: list[int], target: int) -> dict[str, object]:
         "difficulty_score": score,
         "difficulty_band": band,
     }
-

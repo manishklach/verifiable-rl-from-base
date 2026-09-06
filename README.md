@@ -1,7 +1,7 @@
 # Verifiable RL from Base
 
 **Can rule-based reinforcement learning elicit arithmetic search from a 0.8B base
-model—without a supervised fine-tuning warm start?**
+modelâ€”without a supervised fine-tuning warm start?**
 
 This repository trains `Qwen/Qwen3.5-0.8B-Base` directly with Group Relative Policy
 Optimization (GRPO) on Jiayi Pan's Countdown tasks. There is no SFT stage and no learned
@@ -12,8 +12,43 @@ difficulty-aware curricula, adversarial reward audits, `pass@k`, out-of-distribu
 benchmarks, checkpoint comparisons, an interactive demo, and a self-contained research
 report are included.
 
-> Status: implementation complete; experiment results are intentionally not claimed until
-> the GPU run and held-out evaluation have finished.
+> Status: v0.2.0 software release. CPU correctness tests and package builds are validated;
+> end-to-end GPU training and model accuracy improvements are not yet demonstrated.
+
+[![CI](https://github.com/manishklach/verifiable-rl-from-base/actions/workflows/ci.yml/badge.svg)](https://github.com/manishklach/verifiable-rl-from-base/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+## Try it without a GPU
+
+```bash
+python -m venv .venv
+source .venv/bin/activate   # Windows: .venv/Scripts/Activate.ps1
+pip install -e ".[dev]"
+pytest -q
+countdown-generate --samples 3 --arity 3 --maximum 10 --output outputs/smoke.jsonl
+```
+
+```python
+from countdown_rl.solver import solve
+from countdown_rl.verifier import verify_completion
+solution = solve([8, 3, 4], 20)
+print(solution.expression)
+assert verify_completion(f"<answer>{solution.expression}</answer>", [8, 3, 4], 20).correct
+```
+
+The solver demonstration verifies software behavior; it is not a language-model result.
+
+## Documentation
+
+| Guide | What it covers |
+|---|---|
+| [Architecture](docs/ARCHITECTURE.md) | Data flow, verifier, rewards, solver limits and curriculum behavior |
+| [Evaluation](docs/EVALUATION.md) | pass@k definition, fair comparisons and JSON/JSONL schemas |
+| [GPU run](docs/GPU_RUN.md) | Installation, hardware, Docker and experiment commands |
+| [Troubleshooting](docs/TROUBLESHOOTING.md) | CPU Windows setup, common failures and GPU acceptance |
+| [Extension guide](docs/EXTENDING.md) | Add datasets, models, rewards and metrics |
+| [Contributing](CONTRIBUTING.md) | Development workflow and evidence requirements |
+| [Changelog](CHANGELOG.md) | Release changes and migration notes |
 
 ## Start here
 
@@ -66,13 +101,13 @@ cross the boundary, even if its order differs.
 The dynamic-programming solver enumerates reachable rational values over subsets of the
 input multiset. It proves solvability and emits a verifier-compatible reference expression.
 Difficulty is based on solution rarity, operator diversity, and whether fractional
-intermediate values are required—not merely expression depth, which is almost constant
+intermediate values are requiredâ€”not merely expression depth, which is almost constant
 when every number must be used.
 
 Three staged curriculum configurations are supplied:
 
 ```bash
-bash scripts/run_curriculum.sh  # easy → medium → hard, resuming optimizer state
+bash scripts/run_curriculum.sh  # easy â†’ medium â†’ hard, resuming optimizer state
 ```
 
 ## Quick start
@@ -85,7 +120,7 @@ git clone https://github.com/manishklach/verifiable-rl-from-base.git
 cd verifiable-rl-from-base
 python -m venv .venv
 source .venv/bin/activate
-pip install -e ".[dev,wandb]"
+pip install -e ".[train,plot,dev,wandb]"
 accelerate config
 ```
 
@@ -148,7 +183,7 @@ countdown-eval \
 Launch the verifier-backed side-by-side demo after training:
 
 ```bash
-pip install -e ".[demo]"
+pip install -e ".[train,demo]"
 countdown-demo --trained outputs/qwen35-0.8b-countdown/final
 ```
 
@@ -206,3 +241,29 @@ See [`docs/GPU_RUN.md`](docs/GPU_RUN.md) for RunPod/Docker instructions and memo
 ## License
 
 MIT
+
+## Installation extras
+
+| Extra | Purpose |
+|---|---|
+| `dev` | pytest, Hypothesis and Ruff; no GPU packages |
+| `train` | GRPO training and model evaluation |
+| `plot` | Training-curve charts |
+| `demo` | Gradio UI; also install `train` |
+| `wandb` | Optional experiment tracking |
+
+## Known limits and research claims
+
+Difficulty is heuristic; solution counts are capped derivation counts. The solver accepts at
+most five numbers and can be slow on five-number tasks. Held-out monitoring data is not an
+untouched final test set. The HTML report does not verify that runs are comparable. Model and
+dataset dependencies are fetched at runtime; archive exact versions for reproducibility.
+No trained checkpoint or headline accuracy result is included. The 24 GB suggestion is a
+starting configuration, not a measured memory guarantee.
+
+## References
+
+- [TRL GRPO documentation](https://huggingface.co/docs/trl/v0.29.0/en/grpo_trainer)
+- [Countdown source dataset](https://huggingface.co/datasets/Jiayi-Pan/Countdown-Tasks-3to4)
+- [Configured Qwen base model](https://huggingface.co/Qwen/Qwen3.5-0.8B-Base)
+- [Software citation metadata](CITATION.cff)

@@ -65,7 +65,8 @@ def main() -> None:
         per_device_train_batch_size=cfg.per_device_train_batch_size,
         gradient_accumulation_steps=cfg.gradient_accumulation_steps,
         num_generations=cfg.num_generations,
-        max_prompt_length=cfg.max_prompt_length,
+        per_device_eval_batch_size=cfg.num_generations,
+        ignore_data_skip=cfg.difficulty_band is not None,
         max_completion_length=cfg.max_completion_length,
         temperature=cfg.temperature,
         beta=cfg.beta,
@@ -77,7 +78,9 @@ def main() -> None:
         gradient_checkpointing=cfg.gradient_checkpointing,
         report_to=[] if cfg.report_to == "none" else [cfg.report_to],
         remove_unused_columns=False,
-        model_init_kwargs={"dtype": torch.bfloat16 if torch.cuda.is_available() else torch.float32},
+        model_init_kwargs={
+            "dtype": torch.bfloat16 if cfg.bf16 and torch.cuda.is_available() else torch.float32
+        },
     )
     peft_config = None
     if cfg.use_lora:
