@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "verifiable-rl-from-base"
-version = "0.2.0"
+version = "0.3.0"
 description = "Zero-SFT GRPO on Countdown with strict, executable rewards"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -35,6 +35,7 @@ countdown-plot = "countdown_rl.plot:main"
 countdown-generate = "countdown_rl.generate:main"
 countdown-report = "countdown_rl.report:main"
 countdown-demo = "countdown_rl.demo:main"
+countdown-smoke = "countdown_rl.smoke:main"
 countdown-doctor = "countdown_rl.doctor:main"
 
 [tool.setuptools.packages.find]

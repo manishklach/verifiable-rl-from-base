@@ -37,6 +37,9 @@ def main() -> None:
         )
     if cfg.bf16 and torch.cuda.is_available() and not torch.cuda.is_bf16_supported():
         problems.append("BF16 is configured but unsupported; set bf16: false")
+    if problems:
+        print(json.dumps({"problems": problems}, indent=2))
+        raise SystemExit(1)
     reward_functions(cfg.reward_profile)
     model_config = AutoConfig.from_pretrained(cfg.model_name, trust_remote_code=True)
     tokenizer = AutoTokenizer.from_pretrained(cfg.model_name, trust_remote_code=True)

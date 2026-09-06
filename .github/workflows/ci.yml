@@ -20,3 +20,27 @@ jobs:
       - run: pytest -q
       - run: python -m build
       - run: countdown-generate --samples 3 --arity 3 --maximum 10 --output outputs/smoke.jsonl
+
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - run: bash scripts/setup.sh cpu
+      - run: .venv/bin/countdown-smoke --device cpu --tiny
+        env:
+          HF_HUB_OFFLINE: '1'
+          HF_DATASETS_OFFLINE: '1'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cpu-integration-evidence
+          path: |
+            outputs/hardware-smoke/acceptance.json
+            outputs/hardware-smoke/evaluation.json
+            outputs/hardware-smoke/report.html
+            outputs/hardware-smoke/curves.png
+            outputs/hardware-smoke/training/trainer_state.json

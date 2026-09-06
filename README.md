@@ -12,11 +12,28 @@ difficulty-aware curricula, adversarial reward audits, `pass@k`, out-of-distribu
 benchmarks, checkpoint comparisons, an interactive demo, and a self-contained research
 report are included.
 
-> Status: v0.2.0 software release. CPU correctness tests and package builds are validated;
-> end-to-end GPU training and model accuracy improvements are not yet demonstrated.
+> Status: v0.3.0 adds real trainer integration and a hardware acceptance command.
+> GPU performance and model accuracy improvements are not yet demonstrated.
 
 [![CI](https://github.com/manishklach/verifiable-rl-from-base/actions/workflows/ci.yml/badge.svg)](https://github.com/manishklach/verifiable-rl-from-base/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+## Run on real hardware
+
+For Linux with one NVIDIA GPU and Python 3.10-3.12:
+
+```bash
+git clone https://github.com/manishklach/verifiable-rl-from-base.git
+cd verifiable-rl-from-base
+bash scripts/setup.sh cuda
+source .venv/bin/activate
+countdown-smoke --device cuda
+bash scripts/run_experiment.sh
+```
+
+Or run all stages with `bash scripts/quickstart.sh`. Read the
+[clone-to-training guide](docs/GETTING_STARTED.md) for prerequisites and validation scope.
+Tiny Qwen hybrid training passes CPU integration; CUDA still needs an actual GPU test.
 
 ## Try it without a GPU
 
@@ -120,8 +137,7 @@ git clone https://github.com/manishklach/verifiable-rl-from-base.git
 cd verifiable-rl-from-base
 python -m venv .venv
 source .venv/bin/activate
-pip install -e ".[train,plot,dev,wandb]"
-accelerate config
+pip install -c requirements/runtime.txt -e ".[train,plot,dev,wandb]"
 ```
 
 Evaluate the untouched base model first:
@@ -136,7 +152,7 @@ countdown-eval \
 Train for 500 GRPO steps:
 
 ```bash
-accelerate launch -m countdown_rl.train \
+python -m countdown_rl.train \
   --config configs/qwen35-0.8b-grpo.yaml
 ```
 

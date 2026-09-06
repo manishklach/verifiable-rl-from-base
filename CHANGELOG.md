@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.0 - 2026-09-06
+
+- Fix Qwen GRPO scoring failure with a shared text-only checkpoint loader.
+- Add constrained Linux CPU/CUDA setup and one-command experiment orchestration.
+- Add tiny hybrid integration: exact text weights, nonzero adapter updates, resume,
+  adapter reload, evaluation, report and plot. Run it in Linux CI.
+- Add real-model CUDA acceptance with source data and normal rewards.
+- Prevent accidental checkpoint overwrite; fail CPU preflight before network access.
+- Document the setup path and outstanding GPU validation.
+
+
 ## 0.2.0 — 2026-09-06
 
 ### Correctness and experimental integrity

@@ -18,39 +18,18 @@ from .verifier import answer_block, verify_completion
 
 def load_model(model_path: str):
     from peft import PeftConfig, PeftModel
-    from transformers import (
-        AutoConfig,
-        AutoModelForCausalLM,
-        AutoModelForImageTextToText,
-        AutoTokenizer,
-    )
+    from transformers import AutoTokenizer
+
+    from .modeling import load_base_model
 
     path = Path(model_path)
     adapter_config = path / "adapter_config.json"
     base_name = model_path
     if adapter_config.exists():
         base_name = PeftConfig.from_pretrained(model_path).base_model_name_or_path
-    architecture = (
-        AutoConfig.from_pretrained(base_name, trust_remote_code=True).architectures or [""]
-    )[0]
-    auto_model = (
-        AutoModelForImageTextToText
-        if architecture.endswith("ForConditionalGeneration")
-        else AutoModelForCausalLM
-    )
+    model = load_base_model(base_name, dtype="auto", device_map="auto")
     if adapter_config.exists():
-        peft_cfg = PeftConfig.from_pretrained(model_path)
-        base = auto_model.from_pretrained(
-            peft_cfg.base_model_name_or_path,
-            dtype="auto",
-            device_map="auto",
-            trust_remote_code=True,
-        )
-        model = PeftModel.from_pretrained(base, model_path)
-    else:
-        model = auto_model.from_pretrained(
-            model_path, dtype="auto", device_map="auto", trust_remote_code=True
-        )
+        model = PeftModel.from_pretrained(model, model_path)
     tokenizer_source = (
         model_path if (path / "tokenizer_config.json").exists() else model.config.name_or_path
     )
@@ -67,7 +46,11 @@ def _problem_id(nums: list[int], target: int) -> str:
 
 
 def _load_jsonl(path: str, samples: int) -> Dataset:
-    rows = [json.loads(line) for line in Path(path).read_text(encoding="utf-8").splitlines() if line.strip()]
+    rows = [
+        json.loads(line)
+        for line in Path(path).read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
     unique = []
     seen = set()
     for row in rows:

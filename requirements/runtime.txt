@@ -1,0 +1,9 @@
+# Supported runtime versions. Install PyTorch separately for the selected device.
+torch==2.9.1
+transformers==5.3.0
+trl==0.29.0
+peft==0.18.1
+accelerate==1.12.0
+datasets==5.0.1
+matplotlib==3.10.8
+pyyaml==6.0.3

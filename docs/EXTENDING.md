@@ -69,8 +69,8 @@ countdown-doctor --config configs/my-model.yaml
 accelerate launch -m countdown_rl.train --config configs/my-model.yaml
 ```
 
-The evaluator recognizes ordinary causal-LM checkpoints and Qwen-style
-`ForConditionalGeneration` wrappers. A genuinely new architecture may require a loader
+The shared loader recognizes ordinary causal-LM checkpoints and extracts Qwen3.5
+text models from composite checkpoints. A genuinely new architecture may require a loader
 branch and an integration test.
 
 ## Add a dataset

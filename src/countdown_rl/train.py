@@ -10,26 +10,40 @@ from trl import GRPOConfig, GRPOTrainer
 
 from .config import ExperimentConfig, config_argument
 from .data import prepare_dataset
+from .modeling import load_base_model
 from .rewards import reward_functions
 
 
-def main() -> None:
-    cfg = ExperimentConfig.from_yaml(config_argument())
+def run_training(cfg: ExperimentConfig, datasets=None, reward_funcs=None) -> Path:
     set_seed(cfg.seed)
     output = Path(cfg.output_dir)
+    if (
+        output.exists()
+        and (any(output.glob("checkpoint-*")) or (output / "final").exists())
+        and not cfg.resume_from_checkpoint
+    ):
+        raise ValueError(
+            f"Output contains training checkpoints: {output}; choose a new output_dir or resume"
+        )
     output.mkdir(parents=True, exist_ok=True)
     config_suffix = cfg.difficulty_band or "main"
     (output / f"experiment_config-{config_suffix}.json").write_text(
         json.dumps(vars(cfg), indent=2) + "\n"
     )
 
-    train_data, eval_data = prepare_dataset(
-        cfg.dataset_name,
-        cfg.train_size,
-        cfg.eval_size,
-        cfg.seed,
-        annotate_difficulty=cfg.difficulty_band is not None,
+    train_data, eval_data = (
+        datasets
+        if datasets is not None
+        else prepare_dataset(
+            cfg.dataset_name,
+            cfg.train_size,
+            cfg.eval_size,
+            cfg.seed,
+            annotate_difficulty=cfg.difficulty_band is not None,
+        )
     )
+    if not len(train_data) or not len(eval_data):
+        raise ValueError("training and evaluation datasets must both be nonempty")
     if cfg.difficulty_band:
         train_data = train_data.filter(
             lambda row: row["difficulty_band"] == cfg.difficulty_band,
@@ -78,9 +92,6 @@ def main() -> None:
         gradient_checkpointing=cfg.gradient_checkpointing,
         report_to=[] if cfg.report_to == "none" else [cfg.report_to],
         remove_unused_columns=False,
-        model_init_kwargs={
-            "dtype": torch.bfloat16 if cfg.bf16 and torch.cuda.is_available() else torch.float32
-        },
     )
     peft_config = None
     if cfg.use_lora:
@@ -94,8 +105,13 @@ def main() -> None:
         )
 
     trainer = GRPOTrainer(
-        model=cfg.model_name,
-        reward_funcs=reward_functions(cfg.reward_profile),
+        model=load_base_model(
+            cfg.model_name,
+            dtype=torch.bfloat16 if cfg.bf16 and torch.cuda.is_available() else torch.float32,
+        ),
+        reward_funcs=reward_funcs
+        if reward_funcs is not None
+        else reward_functions(cfg.reward_profile),
         args=args,
         train_dataset=train_data,
         eval_dataset=eval_data,
@@ -107,6 +123,11 @@ def main() -> None:
     trainer.save_model(final_dir)
     tokenizer.save_pretrained(final_dir)
     trainer.state.save_to_json(str(output / "trainer_state.json"))
+    return final_dir
+
+
+def main() -> None:
+    run_training(ExperimentConfig.from_yaml(config_argument()))
 
 
 if __name__ == "__main__":

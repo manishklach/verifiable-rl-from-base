@@ -1,5 +1,8 @@
 # Reproducing the GPU experiment
 
+First follow [Clone to training](GETTING_STARTED.md) and pass `countdown-smoke --device cuda`.
+CUDA has not been validated on maintainer hardware.
+
 ## Recommended hardware
 
 Start with one NVIDIA GPU with at least 24 GB VRAM. The default configuration uses LoRA,
@@ -32,8 +35,9 @@ cd verifiable-rl-from-base
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -U pip
-pip install -e ".[train,plot,dev,wandb,demo]"
-accelerate config default
+bash scripts/setup.sh cuda
+source .venv/bin/activate
+countdown-smoke --device cuda
 bash scripts/run_experiment.sh
 ```
 
@@ -48,6 +52,9 @@ docker run --rm --gpus all --ipc=host --shm-size=16g \
   -v "$PWD/outputs:/workspace/verifiable-rl-from-base/outputs" \
   countdown-grpo
 ```
+
+The container defaults to acceptance. To run the full experiment, append
+`bash scripts/run_experiment.sh` to the docker run command. Docker is not locally validated.
 
 ## After training
 

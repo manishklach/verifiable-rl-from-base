@@ -45,6 +45,9 @@ nonfractional representatives when available.
 The default install provides data, verification, generation, metrics and reports. `train` adds
 PyTorch, Transformers, PEFT and TRL; `plot` adds Matplotlib; `demo` adds Gradio. Install both
 `train,demo` for inference UI. Model evaluation imports its GPU dependencies only when needed.
+Qwen3.5 uses a shared text-only loader to avoid multimodal position-state reuse across
+differently sized GRPO generation and scoring batches. The language weights are extracted
+from the original composite checkpoint.
 The training extra targets TRL 0.29.x. Dependency ranges are not a reproducibility lock: archive
 `pip freeze`, hardware, configuration, dataset fingerprints and model revision for each real run.
 

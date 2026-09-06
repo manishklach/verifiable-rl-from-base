@@ -11,7 +11,7 @@ python -m countdown_rl.evaluate \
   --samples 500 \
   --output "$RUN_DIR/baseline.json"
 
-accelerate launch -m countdown_rl.train \
+python -m countdown_rl.train \
   --config configs/qwen35-0.8b-grpo.yaml
 
 python -m countdown_rl.evaluate \

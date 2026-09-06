@@ -3,3 +3,4 @@ recursive-include configs *.yaml
 recursive-include docs *.md
 recursive-include scripts *.sh
 recursive-include model-card *.md
+recursive-include requirements *.txt
