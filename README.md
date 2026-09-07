@@ -1,7 +1,7 @@
 # Verifiable RL from Base
 
 **Can rule-based reinforcement learning elicit arithmetic search from a 0.8B base
-modelâ€”without a supervised fine-tuning warm start?**
+model—without a supervised fine-tuning warm start?**
 
 This repository trains `Qwen/Qwen3.5-0.8B-Base` directly with Group Relative Policy
 Optimization (GRPO) on Jiayi Pan's Countdown tasks. There is no SFT stage and no learned
@@ -118,13 +118,13 @@ cross the boundary, even if its order differs.
 The dynamic-programming solver enumerates reachable rational values over subsets of the
 input multiset. It proves solvability and emits a verifier-compatible reference expression.
 Difficulty is based on solution rarity, operator diversity, and whether fractional
-intermediate values are requiredâ€”not merely expression depth, which is almost constant
+intermediate values are required—not merely expression depth, which is almost constant
 when every number must be used.
 
 Three staged curriculum configurations are supplied:
 
 ```bash
-bash scripts/run_curriculum.sh  # easy â†’ medium â†’ hard, resuming optimizer state
+bash scripts/run_curriculum.sh  # easy → medium → hard, resuming optimizer state
 ```
 
 ## Quick start
